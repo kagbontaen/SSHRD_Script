@@ -90,6 +90,14 @@ elif [ "$oscheck" = 'Darwin' ]; then
     while ! (system_profiler SPUSBDataType 2> /dev/null | grep ' Apple Mobile Device (DFU Mode)' >> /dev/null); do
         sleep 1
     done
+elif [ "$oscheck" = 'MINGW64_NT-10.0-22631' ]; then
+	if ! pnputil -enum-devices -connected -class USB | grep -q ' Apple Mobile Device'; then
+		echo "[*] Waiting for device in DFU mode"
+	fi
+	
+	while ! pnputil -enum-devices -connected -class USB | grep ' Apple Mobile Device' >/dev/null; do
+		sleep 1
+	done
 else
     if ! (lsusb 2> /dev/null | grep ' Apple, Inc. Mobile Device (DFU Mode)' >> /dev/null); then
         echo "[*] Waiting for device in DFU mode"
