@@ -5,8 +5,12 @@ fi
 $(rm logs/*.log 2> /dev/null)
 {
 set -e
-oscheck=$(uname)
 
+if uname | grep -q -e MSYS -e MING; then
+	if echo $OS | grep -q Windows; then oscheck='Windows'; fi
+else
+	oscheck=$(uname)
+fi
 version="$1"
 
 major=$(echo "$version" | cut -d. -f1)
@@ -17,7 +21,10 @@ ERR_HANDLER () {
     [ $? -eq 0 ] && exit
     echo "[-] An error occurred"
     rm -rf work 12rd | true
-    killall iproxy 2>/dev/null | true
+	if "$oscheck" = 'Windows'; then (taskkill /f /im iproxy.exe);
+	else 
+		killall iproxy 2>/dev/null | true
+	fi
 
     # echo "[-] Uploading logs. If this fails, it's not a big deal."
     for file in logs/*.log; do
@@ -65,7 +72,7 @@ elif [ "$1" = 'dump-blobs' ]; then
     fi
     "$oscheck"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "cat /dev/$device" | dd of=dump.raw bs=256 count=$((0x4000))
     "$oscheck"/img4tool --convert -s dumped.shsh dump.raw
-    killall iproxy 2>/dev/null | true
+    "killall" iproxy 2>/dev/null | true
     echo "[*] Onboard blobs should have dumped to the dumped.shsh file"
     exit
 elif [ "$1" = 'reboot' ]; then
@@ -74,10 +81,10 @@ elif [ "$1" = 'reboot' ]; then
     echo "[*] Device should now reboot"
     exit
 elif [ "$1" = 'ssh' ]; then
-    killall iproxy 2>/dev/null | true
+    if [ "$oscheck" = 'Windows' ]; then taskkill //f //im iprox*; else killall iproxy 2>/dev/null | true fi
     "$oscheck"/iproxy 2222 22 &>/dev/null &
     "$oscheck"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost || true
-    killall iproxy 2>/dev/null | true
+    "killall" iproxy 2>/dev/null | true
     exit
 elif [ "$oscheck" = 'Darwin' ]; then
     if ! (system_profiler SPUSBDataType 2> /dev/null | grep ' Apple Mobile Device (DFU Mode)' >> /dev/null); then
@@ -87,12 +94,12 @@ elif [ "$oscheck" = 'Darwin' ]; then
     while ! (system_profiler SPUSBDataType 2> /dev/null | grep ' Apple Mobile Device (DFU Mode)' >> /dev/null); do
         sleep 1
     done
-elif [ "$oscheck" = 'MINGW64_NT-10.0-22631' ]; then
-	if ! pnputil -enum-devices -connected -class USB | grep -q ' Apple Mobile Device'; then
-		echo "[*] Waiting for device in DFU mode"
+elif [ "$oscheck" = 'Windows' ]; then
+	if ! pnputil -enum-devices -connected -class USBDevice | grep -q 'Apple'; then
+		echo "[*] Waiting for device in DFU mode windows"
 	fi
 	
-	while ! pnputil -enum-devices -connected -class USB | grep ' Apple Mobile Device' >/dev/null; do
+	while ! pnputil -enum-devices -connected -class USBDevice | grep ' Apple Mobile Device' >/dev/null; do
 		sleep 1
 	done
 else
@@ -129,12 +136,12 @@ if [ "$1" = 'reset' ]; then
         exit
     fi
 
-    if [ "$check" = '0x8960' ]; then
-        "$oscheck"/ipwnder > /dev/null
-    else
-        "$oscheck"/gaster pwn > /dev/null
-    fi
-    "$oscheck"/gaster reset > /dev/null
+    # if [ "$check" = '0x8960' ]; then
+        # "$oscheck"/ipwnder > /dev/null
+    # else
+        # "$oscheck"/gaster pwn > /dev/null
+    # fi
+    # "$oscheck"/gaster reset > /dev/null
     "$oscheck"/irecovery -f sshramdisk/iBSS.img4
     sleep 2
     "$oscheck"/irecovery -f sshramdisk/iBEC.img4
@@ -172,12 +179,12 @@ if [ "$1" = 'boot' ]; then
     minor=${minor:-0}
     patch=${patch:-0}
     
-    if [ "$check" = '0x8960' ]; then
-        "$oscheck"/ipwnder > /dev/null
-    else
-        "$oscheck"/gaster pwn > /dev/null
-    fi
-    "$oscheck"/gaster reset > /dev/null
+    # if [ "$check" = '0x8960' ]; then
+        # "$oscheck"/ipwnder > /dev/null
+    # else
+        # "$oscheck"/gaster pwn > /dev/null
+    # fi
+    # "$oscheck"/gaster reset > /dev/null
     "$oscheck"/irecovery -f sshramdisk/iBSS.img4
     sleep 2
     "$oscheck"/irecovery -f sshramdisk/iBEC.img4
@@ -214,7 +221,7 @@ if [ ! -e work ]; then
     mkdir work
 fi
 
-"$oscheck"/gaster pwn > /dev/null
+# "$oscheck"/gaster pwn > /dev/null
 "$oscheck"/img4tool -e -s other/shsh/"${check}".shsh -m work/IM4M
 
 cd work
