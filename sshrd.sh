@@ -5,12 +5,8 @@ fi
 $(rm logs/*.log 2> /dev/null)
 {
 set -e
+oscheck=$(uname)
 
-if uname | grep -q -e MSYS -e MING; then
-	if echo $OS | grep -q Windows; then oscheck='Windows'; fi
-else
-	oscheck=$(uname)
-fi
 version="$1"
 
 major=$(echo "$version" | cut -d. -f1)
@@ -21,10 +17,7 @@ ERR_HANDLER () {
     [ $? -eq 0 ] && exit
     echo "[-] An error occurred"
     rm -rf work 12rd | true
-	if "$oscheck" = 'Windows'; then (taskkill /f /im iproxy.exe);
-	else 
-		killall iproxy 2>/dev/null | true
-	fi
+    killall iproxy 2>/dev/null | true
 
     # echo "[-] Uploading logs. If this fails, it's not a big deal."
     for file in logs/*.log; do
@@ -72,7 +65,7 @@ elif [ "$1" = 'dump-blobs' ]; then
     fi
     "$oscheck"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "cat /dev/$device" | dd of=dump.raw bs=256 count=$((0x4000))
     "$oscheck"/img4tool --convert -s dumped.shsh dump.raw
-    "killall" iproxy 2>/dev/null | true
+    killall iproxy 2>/dev/null | true
     echo "[*] Onboard blobs should have dumped to the dumped.shsh file"
     exit
 elif [ "$1" = 'reboot' ]; then
@@ -81,10 +74,10 @@ elif [ "$1" = 'reboot' ]; then
     echo "[*] Device should now reboot"
     exit
 elif [ "$1" = 'ssh' ]; then
-    if [ "$oscheck" = 'Windows' ]; then taskkill //f //im iprox*; else killall iproxy 2>/dev/null | true fi
+    killall iproxy 2>/dev/null | true
     "$oscheck"/iproxy 2222 22 &>/dev/null &
     "$oscheck"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost || true
-    "killall" iproxy 2>/dev/null | true
+    killall iproxy 2>/dev/null | true
     exit
 elif [ "$oscheck" = 'Darwin' ]; then
     if ! (system_profiler SPUSBDataType 2> /dev/null | grep ' Apple Mobile Device (DFU Mode)' >> /dev/null); then
@@ -94,12 +87,12 @@ elif [ "$oscheck" = 'Darwin' ]; then
     while ! (system_profiler SPUSBDataType 2> /dev/null | grep ' Apple Mobile Device (DFU Mode)' >> /dev/null); do
         sleep 1
     done
-elif [ "$oscheck" = 'Windows' ]; then
-	if ! pnputil -enum-devices -connected -class USBDevice | grep -q 'Apple'; then
-		echo "[*] Waiting for device in DFU mode windows"
+elif [ "$oscheck" = 'MINGW64_NT-10.0-22631' ]; then
+	if ! pnputil -enum-devices -connected -class USB | grep -q ' Apple Mobile Device'; then
+		echo "[*] Waiting for device in DFU mode"
 	fi
 	
-	while ! pnputil -enum-devices -connected -class USBDevice | grep ' Apple Mobile Device' >/dev/null; do
+	while ! pnputil -enum-devices -connected -class USB | grep ' Apple Mobile Device' >/dev/null; do
 		sleep 1
 	done
 else
@@ -136,12 +129,12 @@ if [ "$1" = 'reset' ]; then
         exit
     fi
 
-    # if [ "$check" = '0x8960' ]; then
-        # "$oscheck"/ipwnder > /dev/null
-    # else
-        # "$oscheck"/gaster pwn > /dev/null
-    # fi
-    # "$oscheck"/gaster reset > /dev/null
+    if [ "$check" = '0x8960' ]; then
+        "$oscheck"/ipwnder > /dev/null
+    else
+        "$oscheck"/gaster pwn > /dev/null
+    fi
+    "$oscheck"/gaster reset > /dev/null
     "$oscheck"/irecovery -f sshramdisk/iBSS.img4
     sleep 2
     "$oscheck"/irecovery -f sshramdisk/iBEC.img4
@@ -179,12 +172,12 @@ if [ "$1" = 'boot' ]; then
     minor=${minor:-0}
     patch=${patch:-0}
     
-    # if [ "$check" = '0x8960' ]; then
-        # "$oscheck"/ipwnder > /dev/null
-    # else
-        # "$oscheck"/gaster pwn > /dev/null
-    # fi
-    # "$oscheck"/gaster reset > /dev/null
+    if [ "$check" = '0x8960' ]; then
+        "$oscheck"/ipwnder > /dev/null
+    else
+        "$oscheck"/gaster pwn > /dev/null
+    fi
+    "$oscheck"/gaster reset > /dev/null
     "$oscheck"/irecovery -f sshramdisk/iBSS.img4
     sleep 2
     "$oscheck"/irecovery -f sshramdisk/iBEC.img4
@@ -221,7 +214,7 @@ if [ ! -e work ]; then
     mkdir work
 fi
 
-# "$oscheck"/gaster pwn > /dev/null
+"$oscheck"/gaster pwn > /dev/null
 "$oscheck"/img4tool -e -s other/shsh/"${check}".shsh -m work/IM4M
 
 cd work
@@ -240,7 +233,7 @@ else
     if [ "$major" -lt 11 ] || ([ "$major" -eq 11 ] && ([ "$minor" -lt 4 ] || [ "$minor" -eq 4 ] && [ "$patch" -le 1 ] || [ "$check" != '0x8012' ])); then
     :
     else
-    ../"$oscheck"/pzb -g Firmware/"$(../Linux/PlistBuddy BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')".trustcache "$ipswurl"
+    ../"$oscheck"/pzb -g Firmware/"$(python3 -c "import plistlib; pl = plistlib.load(open('./BuildManifest.plist', 'rb')); print(pl['BuildIdentities'][0]['Manifest']['RestoreRamDisk']['Info']['Path'])" | sed 's/"//g')".trustcache "$ipswurl"
     fi
 fi
 
@@ -249,7 +242,7 @@ fi
 if [ "$oscheck" = 'Darwin' ]; then
     ../"$oscheck"/pzb -g "$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" "$ipswurl"
 else
-    ../"$oscheck"/pzb -g "$(../Linux/PlistBuddy BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" "$ipswurl"
+    ../"$oscheck"/pzb -g "$(python3 -c "import plistlib; pl = plistlib.load(open('./BuildManifest.plist', 'rb')); print(pl['BuildIdentities'][0]['Manifest']['RestoreRamDisk']['Info']['Path'])"  | sed 's/"//g')" "$ipswurl"
 fi
 
 cd ..
@@ -282,9 +275,9 @@ else
     if [ "$major" -lt 11 ] || ([ "$major" -eq 11 ] && ([ "$minor" -lt 4 ] || [ "$minor" -eq 4 ] && [ "$patch" -le 1 ] || [ "$check" != '0x8012' ])); then
     :
     else
-    "$oscheck"/img4 -i work/"$(Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')".trustcache -o sshramdisk/trustcache.img4 -M work/IM4M -T rtsc
+    "$oscheck"/img4 -i work/"$(python3 -c "import plistlib; pl = plistlib.load(open('work/BuildManifest.plist', 'rb')); print(pl['BuildIdentities'][0]['Manifest']['RestoreRamDisk']['Info']['Path'])" | sed 's/"//g')".trustcache -o sshramdisk/trustcache.img4 -M work/IM4M -T rtsc
     fi
-    "$oscheck"/img4 -i work/"$(Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" -o work/ramdisk.dmg
+    "$oscheck"/img4 -i work/"$(python3 -c "import plistlib; pl = plistlib.load(open('work/BuildManifest.plist', 'rb')); print(pl['BuildIdentities'][0]['Manifest']['RestoreRamDisk']['Info']['Path'])" | sed 's/"//g')" -o work/ramdisk.dmg
 fi
 
 if [ "$oscheck" = 'Darwin' ]; then
@@ -353,8 +346,10 @@ else
         ipswurl12=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$oscheck"/jq '.firmwares | .[] | select(.version=="'12.0'")' | "$oscheck"/jq -s '.[0] | .url' --raw-output)
         cd 12rd
         ../"$oscheck"/pzb -g BuildManifest.plist "$ipswurl12"
-        ../"$oscheck"/pzb -g "$(../Linux/PlistBuddy BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" "$ipswurl12"
-        ../"$oscheck"/img4 -i "$(../Linux/PlistBuddy BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" -o ramdisk.dmg
+        ramdiskname=python3 -c "import plistlib; pl = plistlib.load(open('./BuildManifest.plist', 'rb')); print(pl['BuildIdentities'][0]['Manifest']['RestoreRamDisk']['Info']['Path'])" | sed 's/"//g'
+        echo $ramdiskname
+        ../"$oscheck"/pzb -g "$(python3 -c "import plistlib; pl = plistlib.load(open('./BuildManifest.plist', 'rb')); print(pl['BuildIdentities'][0]['Manifest']['RestoreRamDisk']['Info']['Path'])" | sed 's/"//g')" "$ipswurl12"
+        ../"$oscheck"/img4 -i "$(python3 -c "import plistlib; pl = plistlib.load(open('./BuildManifest.plist', 'rb')); print(pl['BuildIdentities'][0]['Manifest']['RestoreRamDisk']['Info']['Path'])" | sed 's/"//g')" -o ramdisk.dmg
         ../"$oscheck"/hfsplus ramdisk.dmg extract usr/lib/libcharset.1.dylib libcharset.1.dylib
         ../"$oscheck"/hfsplus ramdisk.dmg extract usr/lib/libiconv.2.dylib libiconv.2.dylib
         ../"$oscheck"/hfsplus ../work/ramdisk.dmg add libiconv.2.dylib usr/lib/libiconv.2.dylib
@@ -394,4 +389,11 @@ echo ""
 echo "[*] Finished! Please use ./sshrd.sh boot to boot your device"
 echo $1 > sshramdisk/version.txt
 
+echo "making ramdisk copy"
+ramdiskfolder=ramdisks/"$replace"_"$1"/
+mkdir -p $ramdiskfolder | true
+for file in sshramdisk/*; do
+    echo "copying $file to $ramdiskfolder"
+    cp -au "$file" "$ramdiskfolder"
+done
  } | tee logs/"$(date +%T)"-"$(date +%F)"-"$(uname)"-"$(uname -r)".log
