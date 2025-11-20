@@ -6,3 +6,4 @@ sshramdisk
 .irecovery
 *.log
 nul
+ramdisks/
