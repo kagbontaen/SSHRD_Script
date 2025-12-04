@@ -1,10 +1,10 @@
 <h1 align="center">SSH Ramdisk Script</h1>
 <p align="center">
-  <a href="https://github.com/verygenericname/SSHRD_Script/graphs/contributors" target="_blank">
-    <img src="https://img.shields.io/github/contributors/verygenericname/SSHRD_Script.svg" alt="Contributors">
+  <a href="https://github.com/kagbontaen/SSHRD_Script/graphs/contributors" target="_blank">
+    <img src="https://img.shields.io/github/contributors/kagbontaen/SSHRD_Script.svg" alt="Contributors">
   </a>
-  <a href="https://github.com/verygenericname/SSHRD_Script/commits/main" target="_blank">
-    <img src="https://img.shields.io/github/commit-activity/w/verygenericname/SSHRD_Script.svg" alt="Commits">
+  <a href="https://github.com/kagbontaen/SSHRD_Script/commits/main" target="_blank">
+    <img src="https://img.shields.io/github/commit-activity/w/kagbontaen/SSHRD_Script.svg" alt="Commits">
   </a>
 </p>
 
