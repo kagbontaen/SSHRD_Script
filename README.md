@@ -94,7 +94,7 @@ sudo usbmuxd -p -f
 ---
 
 # Credits
-- **remote-zip-viewer.py** (from the `[remote-zip-downloader](https://github.com/kagbontaen/remote-zip-downloader)` project)
+- **remote-zip-viewer.py** (from the [remote-zip-downloader](https://github.com/kagbontaen/remote-zip-downloader) project)
 - [tihmstar](https://github.com/tihmstar) — pzb, original iBoot64Patcher, img4tool
 - [xerub](https://github.com/xerub) — img4lib, restored_external
 - [Cryptic](https://github.com/Cryptiiiic) — iBoot64Patcher fork
