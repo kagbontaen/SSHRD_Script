@@ -7,3 +7,4 @@ sshramdisk
 *.log
 nul
 ramdisks/
+sshrd-kk.sh
